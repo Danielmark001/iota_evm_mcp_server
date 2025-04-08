@@ -1,4 +1,3 @@
-// src/core/services/iota-contracts.ts
 import {
   type Address,
   type Hash,

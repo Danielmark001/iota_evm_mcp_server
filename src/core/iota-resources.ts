@@ -3,7 +3,6 @@ import {
   McpServer,
   ResourceTemplate,
 } from "@modelcontextprotocol/sdk/server/mcp.js";
-import * as services from "./services/index.js";
 import {
   getIOTATokenInfo,
   getIOTABalance,
@@ -13,10 +12,22 @@ import {
   IOTA_TESTNET_ID,
   IOTA_SHIMMER_ID,
 } from "./services/iota.js";
+import {
+  getIOTALiquidityPools,
+  getIOTALendingMarkets,
+  getIOTAStakingOpportunities,
+  getIOTATopTokens,
+} from "./services/iota-defi.js";
+import {
+  analyzeIOTATransaction,
+  getIOTAAddressMetrics,
+} from "./services/iota-analytics.js";
+import { getIOTANetworkMetrics } from "./services/iota-metrics.js";
+import * as services from "./services/index.js";
 import { type Address } from "viem";
 
 /**
- * Register IOTA-specific resources with the MCP server
+ * Register IOTA-specific resources
  * @param server The MCP server instance
  */
 export function registerIOTAResources(server: McpServer) {
@@ -40,43 +51,14 @@ export function registerIOTAResources(server: McpServer) {
           };
         }
 
-        const chainId =
-          network === "shimmer"
-            ? IOTA_SHIMMER_ID
-            : network === "iota-testnet"
-            ? IOTA_TESTNET_ID
-            : IOTA_MAINNET_ID;
-
-        const blockNumber = await services.getBlockNumber(network);
-
-        // Get native token info
-        const tokenInfo = await getIOTATokenInfo(network);
+        // Get network metrics which includes comprehensive information
+        const metrics = await getIOTANetworkMetrics(network, 10);
 
         return {
           contents: [
             {
               uri: uri.href,
-              text: JSON.stringify(
-                {
-                  networkName: network,
-                  chainId,
-                  blockNumber: blockNumber.toString(),
-                  nativeToken: {
-                    name: tokenInfo.name,
-                    symbol: tokenInfo.symbol,
-                    decimals: tokenInfo.decimals,
-                    totalSupply: tokenInfo.formattedTotalSupply,
-                  },
-                  rpcUrl:
-                    network === "shimmer"
-                      ? "https://json-rpc.evm.shimmer.network"
-                      : network === "iota-testnet"
-                      ? "https://testnet.evm.wasp.sc.iota.org"
-                      : "https://evm.wasp.sc.iota.org",
-                },
-                null,
-                2
-              ),
+              text: JSON.stringify(metrics, null, 2),
             },
           ],
         };
@@ -95,36 +77,17 @@ export function registerIOTAResources(server: McpServer) {
     }
   );
 
-  // Default IOTA network info
+  // Default IOTA network info (mainnet)
   server.resource("default_iota_network_info", "iota://info", async (uri) => {
     try {
       const network = "iota";
-      const chainId = IOTA_MAINNET_ID;
-      const blockNumber = await services.getBlockNumber(network);
-
-      // Get native token info
-      const tokenInfo = await getIOTATokenInfo(network);
+      const metrics = await getIOTANetworkMetrics(network, 10);
 
       return {
         contents: [
           {
             uri: uri.href,
-            text: JSON.stringify(
-              {
-                networkName: network,
-                chainId,
-                blockNumber: blockNumber.toString(),
-                nativeToken: {
-                  name: tokenInfo.name,
-                  symbol: tokenInfo.symbol,
-                  decimals: tokenInfo.decimals,
-                  totalSupply: tokenInfo.formattedTotalSupply,
-                },
-                rpcUrl: "https://evm.wasp.sc.iota.org",
-              },
-              null,
-              2
-            ),
+            text: JSON.stringify(metrics, null, 2),
           },
         ],
       };
@@ -141,83 +104,6 @@ export function registerIOTAResources(server: McpServer) {
       };
     }
   });
-
-  // IOTA latest block
-  server.resource(
-    "iota_latest_block",
-    new ResourceTemplate("iota://{network}/block/latest", { list: undefined }),
-    async (uri, params) => {
-      try {
-        const network = (params.network as string) || "iota";
-
-        // Validate this is an IOTA network
-        if (!isIOTANetwork(network)) {
-          return {
-            contents: [
-              {
-                uri: uri.href,
-                text: `Error: ${network} is not a valid IOTA network. Valid values are: iota, iota-testnet, shimmer`,
-              },
-            ],
-          };
-        }
-
-        const block = await services.getLatestBlock(network);
-
-        return {
-          contents: [
-            {
-              uri: uri.href,
-              text: services.helpers.formatJson(block),
-            },
-          ],
-        };
-      } catch (error) {
-        return {
-          contents: [
-            {
-              uri: uri.href,
-              text: `Error fetching latest IOTA block: ${
-                error instanceof Error ? error.message : String(error)
-              }`,
-            },
-          ],
-        };
-      }
-    }
-  );
-
-  // Default IOTA latest block
-  server.resource(
-    "default_iota_latest_block",
-    "iota://block/latest",
-    async (uri) => {
-      try {
-        const network = "iota";
-        const block = await services.getLatestBlock(network);
-
-        return {
-          contents: [
-            {
-              uri: uri.href,
-              text: services.helpers.formatJson(block),
-            },
-          ],
-        };
-      } catch (error) {
-        return {
-          contents: [
-            {
-              uri: uri.href,
-              text: `Error fetching latest IOTA block: ${
-                error instanceof Error ? error.message : String(error)
-              }`,
-            },
-          ],
-        };
-      }
-    }
-  );
 
   // IOTA token balance
   server.resource(
@@ -277,56 +163,10 @@ export function registerIOTAResources(server: McpServer) {
     }
   );
 
-  // Default IOTA token balance
+  // IOTA address metrics
   server.resource(
-    "default_iota_token_balance",
-    new ResourceTemplate("iota://address/{address}/balance", {
-      list: undefined,
-    }),
-    async (uri, params) => {
-      try {
-        const network = "iota";
-        const address = params.address as string;
-
-        const balance = await getIOTABalance(address, network);
-
-        return {
-          contents: [
-            {
-              uri: uri.href,
-              text: JSON.stringify(
-                {
-                  address,
-                  network,
-                  tokenSymbol: balance.token.symbol,
-                  raw: balance.raw.toString(),
-                  formatted: balance.formatted,
-                },
-                null,
-                2
-              ),
-            },
-          ],
-        };
-      } catch (error) {
-        return {
-          contents: [
-            {
-              uri: uri.href,
-              text: `Error fetching IOTA balance: ${
-                error instanceof Error ? error.message : String(error)
-              }`,
-            },
-          ],
-        };
-      }
-    }
-  );
-
-  // IOTA staking info
-  server.resource(
-    "iota_staking_info",
-    new ResourceTemplate("iota://{network}/address/{address}/staking", {
+    "iota_address_metrics",
+    new ResourceTemplate("iota://{network}/address/{address}/metrics", {
       list: undefined,
     }),
     async (uri, params) => {
@@ -346,29 +186,13 @@ export function registerIOTAResources(server: McpServer) {
           };
         }
 
-        // Resolve address if it's an ENS name
-        const resolvedAddress = await services.resolveAddress(address, network);
-
-        // Get staking information
-        const stakingInfo = await getIOTAStakingInfo(
-          resolvedAddress as Address,
-          network
-        );
+        const metrics = await getIOTAAddressMetrics(address, network);
 
         return {
           contents: [
             {
               uri: uri.href,
-              text: JSON.stringify(
-                {
-                  address,
-                  resolvedAddress,
-                  network,
-                  staking: stakingInfo,
-                },
-                null,
-                2
-              ),
+              text: JSON.stringify(metrics, null, 2),
             },
           ],
         };
@@ -377,7 +201,7 @@ export function registerIOTAResources(server: McpServer) {
           contents: [
             {
               uri: uri.href,
-              text: `Error fetching IOTA staking info: ${
+              text: `Error fetching IOTA address metrics: ${
                 error instanceof Error ? error.message : String(error)
               }`,
             },
@@ -408,13 +232,23 @@ export function registerIOTAResources(server: McpServer) {
           };
         }
 
-        const tx = await services.getTransaction(txHash as Address, network);
+        const analysis = await analyzeIOTATransaction(txHash as any, network);
 
         return {
           contents: [
             {
               uri: uri.href,
-              text: services.helpers.formatJson(tx),
+              text: JSON.stringify(
+                {
+                  transaction: {
+                    hash: txHash,
+                    network,
+                    ...analysis.analysis,
+                  },
+                },
+                null,
+                2
+              ),
             },
           ],
         };
@@ -433,7 +267,227 @@ export function registerIOTAResources(server: McpServer) {
     }
   );
 
-  // IOTA network status
+  // IOTA DeFi liquidity pools
+  server.resource(
+    "iota_liquidity_pools",
+    new ResourceTemplate("iota://{network}/defi/liquidity-pools", {
+      list: undefined,
+    }),
+    async (uri, params) => {
+      try {
+        const network = (params.network as string) || "iota";
+
+        // Validate this is an IOTA network
+        if (!isIOTANetwork(network)) {
+          return {
+            contents: [
+              {
+                uri: uri.href,
+                text: `Error: ${network} is not a valid IOTA network. Valid values are: iota, iota-testnet, shimmer`,
+              },
+            ],
+          };
+        }
+
+        const pools = await getIOTALiquidityPools(network);
+
+        return {
+          contents: [
+            {
+              uri: uri.href,
+              text: JSON.stringify(pools, null, 2),
+            },
+          ],
+        };
+      } catch (error) {
+        return {
+          contents: [
+            {
+              uri: uri.href,
+              text: `Error fetching IOTA liquidity pools: ${
+                error instanceof Error ? error.message : String(error)
+              }`,
+            },
+          ],
+        };
+      }
+    }
+  );
+
+  // IOTA DeFi lending markets
+  server.resource(
+    "iota_lending_markets",
+    new ResourceTemplate("iota://{network}/defi/lending-markets", {
+      list: undefined,
+    }),
+    async (uri, params) => {
+      try {
+        const network = (params.network as string) || "iota";
+
+        // Validate this is an IOTA network
+        if (!isIOTANetwork(network)) {
+          return {
+            contents: [
+              {
+                uri: uri.href,
+                text: `Error: ${network} is not a valid IOTA network. Valid values are: iota, iota-testnet, shimmer`,
+              },
+            ],
+          };
+        }
+
+        const markets = await getIOTALendingMarkets(network);
+
+        return {
+          contents: [
+            {
+              uri: uri.href,
+              text: JSON.stringify(markets, null, 2),
+            },
+          ],
+        };
+      } catch (error) {
+        return {
+          contents: [
+            {
+              uri: uri.href,
+              text: `Error fetching IOTA lending markets: ${
+                error instanceof Error ? error.message : String(error)
+              }`,
+            },
+          ],
+        };
+      }
+    }
+  );
+
+  // IOTA DeFi staking opportunities
+  server.resource(
+    "iota_staking_opportunities",
+    new ResourceTemplate("iota://{network}/defi/staking", { list: undefined }),
+    async (uri, params) => {
+      try {
+        const network = (params.network as string) || "iota";
+
+        // Validate this is an IOTA network
+        if (!isIOTANetwork(network)) {
+          return {
+            contents: [
+              {
+                uri: uri.href,
+                text: `Error: ${network} is not a valid IOTA network. Valid values are: iota, iota-testnet, shimmer`,
+              },
+            ],
+          };
+        }
+
+        const opportunities = await getIOTAStakingOpportunities(network);
+
+        return {
+          contents: [
+            {
+              uri: uri.href,
+              text: JSON.stringify(opportunities, null, 2),
+            },
+          ],
+        };
+      } catch (error) {
+        return {
+          contents: [
+            {
+              uri: uri.href,
+              text: `Error fetching IOTA staking opportunities: ${
+                error instanceof Error ? error.message : String(error)
+              }`,
+            },
+          ],
+        };
+      }
+    }
+  );
+
+  // IOTA top tokens
+  server.resource(
+    "iota_top_tokens",
+    new ResourceTemplate("iota://{network}/tokens/top", { list: undefined }),
+    async (uri, params) => {
+      try {
+        const network = (params.network as string) || "iota";
+
+        // Validate this is an IOTA network
+        if (!isIOTANetwork(network)) {
+          return {
+            contents: [
+              {
+                uri: uri.href,
+                text: `Error: ${network} is not a valid IOTA network. Valid values are: iota, iota-testnet, shimmer`,
+              },
+            ],
+          };
+        }
+
+        const tokens = await getIOTATopTokens(network);
+
+        return {
+          contents: [
+            {
+              uri: uri.href,
+              text: JSON.stringify(tokens, null, 2),
+            },
+          ],
+        };
+      } catch (error) {
+        return {
+          contents: [
+            {
+              uri: uri.href,
+              text: `Error fetching IOTA top tokens: ${
+                error instanceof Error ? error.message : String(error)
+              }`,
+            },
+          ],
+        };
+      }
+    }
+  );
+
+  // IOTA network comparison
+  server.resource(
+    "iota_network_comparison",
+    "iota://networks/comparison",
+    async (uri) => {
+      try {
+        const comparison = await compareIOTAWithOtherNetworks("iota", [
+          "ethereum",
+          "arbitrum",
+          "optimism",
+          "polygon",
+        ]);
+
+        return {
+          contents: [
+            {
+              uri: uri.href,
+              text: JSON.stringify(comparison, null, 2),
+            },
+          ],
+        };
+      } catch (error) {
+        return {
+          contents: [
+            {
+              uri: uri.href,
+              text: `Error comparing IOTA with other networks: ${
+                error instanceof Error ? error.message : String(error)
+              }`,
+            },
+          ],
+        };
+      }
+    }
+  );
+
+  // IOTA network status (health and performance)
   server.resource(
     "iota_network_status",
     new ResourceTemplate("iota://{network}/status", { list: undefined }),
@@ -453,34 +507,27 @@ export function registerIOTAResources(server: McpServer) {
           };
         }
 
-        // Check network status by querying latest block
-        const latestBlock = await services.getLatestBlock(network);
-        const blockNumber = latestBlock.number;
-        const timestamp = latestBlock.timestamp;
+        const metrics = await getIOTANetworkMetrics(network, 5);
 
-        // Calculate time since last block
-        const now = Math.floor(Date.now() / 1000);
-        const blockDelay = now - Number(timestamp);
+        // Check if the network is healthy based on recent block times
+        const isHealthy = metrics.isHealthy;
 
-        // Check network health
-        const isHealthy = blockDelay < 60; // Less than 60 seconds since last block
+        // Create a simplified status response
+        const status = {
+          network,
+          status: isHealthy ? "healthy" : "delayed",
+          blockHeight: metrics.blockHeight,
+          recentTPS: metrics.recentTPS,
+          averageBlockTime: metrics.averageBlockTime,
+          networkUtilization: metrics.networkUtilization,
+          tokenInfo: metrics.tokenInfo,
+        };
 
         return {
           contents: [
             {
               uri: uri.href,
-              text: JSON.stringify(
-                {
-                  network,
-                  status: isHealthy ? "healthy" : "delayed",
-                  latestBlock: blockNumber ? blockNumber.toString() : "unknown",
-                  blockTimestamp: timestamp.toString(),
-                  blockDelay: `${blockDelay} seconds ago`,
-                  finality: isHealthy ? "high" : "uncertain",
-                },
-                null,
-                2
-              ),
+              text: JSON.stringify(status, null, 2),
             },
           ],
         };
@@ -499,3 +546,9 @@ export function registerIOTAResources(server: McpServer) {
     }
   );
 }
+
+/**
+ * Function to import from server.ts
+ * This needs access to compareIOTAWithOtherNetworks which might not be directly imported above
+ */
+import { compareIOTAWithOtherNetworks } from "./services/iota-metrics.js";

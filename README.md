@@ -58,8 +58,12 @@ All services are exposed through a consistent interface of MCP tools and resourc
 
 - **IOTA network support** for IOTA EVM, IOTA Testnet, and Shimmer networks
 - **IOTA token information** including name, symbol, decimals, and total supply
+- **IOTA network metrics** with TPS, block time, gas usage, etc.
 - **IOTA network status** monitoring and health checks
 - **IOTA balance queries** for checking native token balances
+- **IOTA transaction analytics** with gas usage, type detection, and age analysis
+- **IOTA smart contract analysis** with function detection and standard verification
+- **IOTA DeFi integrations** for liquidity pools, lending markets, and staking
 - **IOTA staking information** for monitoring staking activities
 - **IOTA transaction history** and analysis
 - **Cross-chain comparisons** between IOTA and other networks
@@ -76,14 +80,12 @@ All services are exposed through a consistent interface of MCP tools and resourc
 ### Token Services
 
 - **ERC20 Tokens**
-
   - Get token metadata (name, symbol, decimals, supply)
   - Check token balances
   - Transfer tokens between addresses
   - Approve spending allowances
 
 - **NFTs (ERC721)**
-
   - Get collection and token metadata
   - Verify token ownership
   - Transfer NFTs between addresses
@@ -100,6 +102,7 @@ All services are exposed through a consistent interface of MCP tools and resourc
 - **Write services** with private key signing
 - **Contract verification** to distinguish from EOAs
 - **Event logs** retrieval and filtering
+
 
 ## 🌐 Supported Networks
 

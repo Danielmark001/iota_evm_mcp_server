@@ -1,4 +1,3 @@
-// src/core/services/iota-metrics.ts
 import { getPublicClient } from "./clients.js";
 import { getBlockByNumber, getLatestBlock } from "./blocks.js";
 import { getIOTATokenInfo, isIOTANetwork } from "./iota.js";

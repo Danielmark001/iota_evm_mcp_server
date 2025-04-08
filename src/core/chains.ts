@@ -1,4 +1,4 @@
-import { type Chain } from 'viem';
+import { type Chain } from "viem";
 import {
   // Mainnets
   mainnet,
@@ -32,7 +32,7 @@ import {
   aurora,
   canto,
   flowMainnet,
-  
+
   // Testnets
   sepolia,
   optimismSepolia,
@@ -56,11 +56,14 @@ import {
   celoAlfajores,
   goerli,
   holesky,
-  flowTestnet
-} from 'viem/chains';
+  flowTestnet,
+} from "viem/chains";
+
+// Import IOTA chain configurations
+import { iotaMainnet, iotaTestnet, shimmerEVM } from "./iota-chains.js";
 
 // Default configuration values
-export const DEFAULT_RPC_URL = 'https://eth.llamarpc.com';
+export const DEFAULT_RPC_URL = "https://eth.llamarpc.com";
 export const DEFAULT_CHAIN_ID = 1;
 
 // Map chain IDs to chains
@@ -97,7 +100,12 @@ export const chainMap: Record<number, Chain> = {
   1313161554: aurora,
   7700: canto,
   747: flowMainnet,
-  
+
+  // IOTA Networks
+  1074: iotaMainnet,
+  1075: iotaTestnet,
+  148: shimmerEVM,
+
   // Testnets
   11155111: sepolia,
   11155420: optimismSepolia,
@@ -127,155 +135,168 @@ export const chainMap: Record<number, Chain> = {
 // Map network names to chain IDs for easier reference
 export const networkNameMap: Record<string, number> = {
   // Mainnets
-  'ethereum': 1,
-  'mainnet': 1,
-  'eth': 1,
-  'optimism': 10,
-  'op': 10,
-  'arbitrum': 42161,
-  'arb': 42161,
-  'arbitrum-nova': 42170,
-  'arbitrumnova': 42170,
-  'base': 8453,
-  'polygon': 137,
-  'matic': 137,
-  'polygon-zkevm': 1101,
-  'polygonzkevm': 1101,
-  'avalanche': 43114,
-  'avax': 43114,
-  'binance': 56,
-  'bsc': 56,
-  'zksync': 324,
-  'linea': 59144,
-  'celo': 42220,
-  'gnosis': 100,
-  'xdai': 100,
-  'fantom': 250,
-  'ftm': 250,
-  'filecoin': 314,
-  'fil': 314,
-  'moonbeam': 1284,
-  'moonriver': 1285,
-  'cronos': 25,
-  'scroll': 534352,
-  'mantle': 5000,
-  'manta': 169,
-  'lumia': 994873017,
-  'blast': 81457,
-  'fraxtal': 252,
-  'mode': 34443,
-  'metis': 1088,
-  'kroma': 255,
-  'zora': 7777777,
-  'aurora': 1313161554,
-  'canto': 7700,
-  'flow': 747,
-  
+  ethereum: 1,
+  mainnet: 1,
+  eth: 1,
+  optimism: 10,
+  op: 10,
+  arbitrum: 42161,
+  arb: 42161,
+  "arbitrum-nova": 42170,
+  arbitrumnova: 42170,
+  base: 8453,
+  polygon: 137,
+  matic: 137,
+  "polygon-zkevm": 1101,
+  polygonzkevm: 1101,
+  avalanche: 43114,
+  avax: 43114,
+  binance: 56,
+  bsc: 56,
+  zksync: 324,
+  linea: 59144,
+  celo: 42220,
+  gnosis: 100,
+  xdai: 100,
+  fantom: 250,
+  ftm: 250,
+  filecoin: 314,
+  fil: 314,
+  moonbeam: 1284,
+  moonriver: 1285,
+  cronos: 25,
+  scroll: 534352,
+  mantle: 5000,
+  manta: 169,
+  lumia: 994873017,
+  blast: 81457,
+  fraxtal: 252,
+  mode: 34443,
+  metis: 1088,
+  kroma: 255,
+  zora: 7777777,
+  aurora: 1313161554,
+  canto: 7700,
+  flow: 747,
+
+  // IOTA Networks
+  iota: 1074,
+  "iota-evm": 1074,
+  "iota-mainnet": 1074,
+  "iota-testnet": 1075,
+  shimmer: 148,
+  "shimmer-evm": 148,
+
   // Testnets
-  'sepolia': 11155111,
-  'optimism-sepolia': 11155420,
-  'optimismsepolia': 11155420,
-  'arbitrum-sepolia': 421614,
-  'arbitrumsepolia': 421614,
-  'base-sepolia': 84532,
-  'basesepolia': 84532,
-  'polygon-amoy': 80002,
-  'polygonamoy': 80002,
-  'avalanche-fuji': 43113,
-  'avalanchefuji': 43113,
-  'fuji': 43113,
-  'bsc-testnet': 97,
-  'bsctestnet': 97,
-  'zksync-sepolia': 300,
-  'zksyncsepolia': 300,
-  'linea-sepolia': 59141,
-  'lineasepolia': 59141,
-  'lumia-testnet': 1952959480,
-  'scroll-sepolia': 534351,
-  'scrollsepolia': 534351,
-  'mantle-sepolia': 5003,
-  'mantlesepolia': 5003,
-  'manta-sepolia': 3441006,
-  'mantasepolia': 3441006,
-  'blast-sepolia': 168587773,
-  'blastsepolia': 168587773,
-  'fraxtal-testnet': 2522,
-  'fraxtaltestnet': 2522,
-  'mode-testnet': 919,
-  'modetestnet': 919,
-  'metis-sepolia': 59902,
-  'metissepolia': 59902,
-  'kroma-sepolia': 2358,
-  'kromasepolia': 2358,
-  'zora-sepolia': 999999999,
-  'zorasepolia': 999999999,
-  'celo-alfajores': 44787,
-  'celoalfajores': 44787,
-  'alfajores': 44787,
-  'goerli': 5,
-  'holesky': 17000,
-  'flow-testnet': 545,
+  sepolia: 11155111,
+  "optimism-sepolia": 11155420,
+  optimismsepolia: 11155420,
+  "arbitrum-sepolia": 421614,
+  arbitrumsepolia: 421614,
+  "base-sepolia": 84532,
+  basesepolia: 84532,
+  "polygon-amoy": 80002,
+  polygonamoy: 80002,
+  "avalanche-fuji": 43113,
+  avalanchefuji: 43113,
+  fuji: 43113,
+  "bsc-testnet": 97,
+  bsctestnet: 97,
+  "zksync-sepolia": 300,
+  zksyncsepolia: 300,
+  "linea-sepolia": 59141,
+  lineasepolia: 59141,
+  "lumia-testnet": 1952959480,
+  "scroll-sepolia": 534351,
+  scrollsepolia: 534351,
+  "mantle-sepolia": 5003,
+  mantlesepolia: 5003,
+  "manta-sepolia": 3441006,
+  mantasepolia: 3441006,
+  "blast-sepolia": 168587773,
+  blastsepolia: 168587773,
+  "fraxtal-testnet": 2522,
+  fraxtaltestnet: 2522,
+  "mode-testnet": 919,
+  modetestnet: 919,
+  "metis-sepolia": 59902,
+  metissepolia: 59902,
+  "kroma-sepolia": 2358,
+  kromasepolia: 2358,
+  "zora-sepolia": 999999999,
+  zorasepolia: 999999999,
+  "celo-alfajores": 44787,
+  celoalfajores: 44787,
+  alfajores: 44787,
+  goerli: 5,
+  holesky: 17000,
+  "flow-testnet": 545,
 };
 
 // Map chain IDs to RPC URLs
 export const rpcUrlMap: Record<number, string> = {
   // Mainnets
-  1: 'https://eth.llamarpc.com',
-  10: 'https://mainnet.optimism.io',
-  42161: 'https://arb1.arbitrum.io/rpc',
-  42170: 'https://nova.arbitrum.io/rpc',
-  8453: 'https://mainnet.base.org',
-  137: 'https://polygon-rpc.com',
-  1101: 'https://zkevm-rpc.com',
-  43114: 'https://api.avax.network/ext/bc/C/rpc',
-  56: 'https://bsc-dataseed.binance.org',
-  324: 'https://mainnet.era.zksync.io',
-  59144: 'https://rpc.linea.build',
-  42220: 'https://forno.celo.org',
-  100: 'https://rpc.gnosischain.com',
-  250: 'https://rpc.ftm.tools',
-  314: 'https://api.node.glif.io/rpc/v1',
-  1284: 'https://rpc.api.moonbeam.network',
-  1285: 'https://rpc.api.moonriver.moonbeam.network',
-  25: 'https://evm.cronos.org',
-  534352: 'https://rpc.scroll.io',
-  5000: 'https://rpc.mantle.xyz',
-  169: 'https://pacific-rpc.manta.network/http',
-  81457: 'https://rpc.blast.io',
-  252: 'https://rpc.frax.com',
-  994873017: 'https://mainnet-rpc.lumia.org',
-  34443: 'https://mainnet.mode.network',
-  1088: 'https://andromeda.metis.io/?owner=1088',
-  255: 'https://api.kroma.network',
-  7777777: 'https://rpc.zora.energy',
-  1313161554: 'https://mainnet.aurora.dev',
-  7700: 'https://canto.gravitychain.io',
-  747: 'https://mainnet.evm.nodes.onflow.org',
-  
+  1: "https://eth.llamarpc.com",
+  10: "https://mainnet.optimism.io",
+  42161: "https://arb1.arbitrum.io/rpc",
+  42170: "https://nova.arbitrum.io/rpc",
+  8453: "https://mainnet.base.org",
+  137: "https://polygon-rpc.com",
+  1101: "https://zkevm-rpc.com",
+  43114: "https://api.avax.network/ext/bc/C/rpc",
+  56: "https://bsc-dataseed.binance.org",
+  324: "https://mainnet.era.zksync.io",
+  59144: "https://rpc.linea.build",
+  42220: "https://forno.celo.org",
+  100: "https://rpc.gnosischain.com",
+  250: "https://rpc.ftm.tools",
+  314: "https://api.node.glif.io/rpc/v1",
+  1284: "https://rpc.api.moonbeam.network",
+  1285: "https://rpc.api.moonriver.moonbeam.network",
+  25: "https://evm.cronos.org",
+  534352: "https://rpc.scroll.io",
+  5000: "https://rpc.mantle.xyz",
+  169: "https://pacific-rpc.manta.network/http",
+  81457: "https://rpc.blast.io",
+  252: "https://rpc.frax.com",
+  994873017: "https://mainnet-rpc.lumia.org",
+  34443: "https://mainnet.mode.network",
+  1088: "https://andromeda.metis.io/?owner=1088",
+  255: "https://api.kroma.network",
+  7777777: "https://rpc.zora.energy",
+  1313161554: "https://mainnet.aurora.dev",
+  7700: "https://canto.gravitychain.io",
+  747: "https://mainnet.evm.nodes.onflow.org",
+
+  // IOTA Networks
+  1074: "https://evm.wasp.sc.iota.org",
+  1075: "https://testnet.evm.wasp.sc.iota.org",
+  148: "https://json-rpc.evm.shimmer.network",
+
   // Testnets
-  11155111: 'https://sepolia.drpc.org',
-  11155420: 'https://sepolia.optimism.io',
-  421614: 'https://sepolia-rpc.arbitrum.io/rpc',
-  84532: 'https://sepolia.base.org',
-  80002: 'https://rpc-amoy.polygon.technology',
-  43113: 'https://api.avax-test.network/ext/bc/C/rpc',
-  97: 'https://data-seed-prebsc-1-s1.binance.org:8545',
-  300: 'https://sepolia.era.zksync.dev',
-  59141: 'https://rpc.sepolia.linea.build',
-  534351: 'https://sepolia-rpc.scroll.io',
-  5003: 'https://rpc.sepolia.mantle.xyz',
-  3441006: 'https://pacific-rpc.sepolia.manta.network/http',
-  1952959480: 'https://testnet-rpc.lumia.org',
-  168587773: 'https://sepolia.blast.io',
-  2522: 'https://rpc.testnet.frax.com',
-  919: 'https://sepolia.mode.network',
-  59902: 'https://sepolia.metis.io/?owner=59902',
-  2358: 'https://api.sepolia.kroma.network',
-  999999999: 'https://sepolia.rpc.zora.energy',
-  44787: 'https://alfajores-forno.celo-testnet.org',
-  5: 'https://rpc.ankr.com/eth_goerli',
-  17000: 'https://ethereum-holesky.publicnode.com',
-  545: 'https://testnet.evm.nodes.onflow.org',
+  11155111: "https://sepolia.drpc.org",
+  11155420: "https://sepolia.optimism.io",
+  421614: "https://sepolia-rpc.arbitrum.io/rpc",
+  84532: "https://sepolia.base.org",
+  80002: "https://rpc-amoy.polygon.technology",
+  43113: "https://api.avax-test.network/ext/bc/C/rpc",
+  97: "https://data-seed-prebsc-1-s1.binance.org:8545",
+  300: "https://sepolia.era.zksync.dev",
+  59141: "https://rpc.sepolia.linea.build",
+  534351: "https://sepolia-rpc.scroll.io",
+  5003: "https://rpc.sepolia.mantle.xyz",
+  3441006: "https://pacific-rpc.sepolia.manta.network/http",
+  1952959480: "https://testnet-rpc.lumia.org",
+  168587773: "https://sepolia.blast.io",
+  2522: "https://rpc.testnet.frax.com",
+  919: "https://sepolia.mode.network",
+  59902: "https://sepolia.metis.io/?owner=59902",
+  2358: "https://api.sepolia.kroma.network",
+  999999999: "https://sepolia.rpc.zora.energy",
+  44787: "https://alfajores-forno.celo-testnet.org",
+  5: "https://rpc.ankr.com/eth_goerli",
+  17000: "https://ethereum-holesky.publicnode.com",
+  545: "https://testnet.evm.nodes.onflow.org",
 };
 
 /**
@@ -284,24 +305,24 @@ export const rpcUrlMap: Record<number, string> = {
  * @returns The resolved chain ID
  */
 export function resolveChainId(chainIdentifier: number | string): number {
-  if (typeof chainIdentifier === 'number') {
+  if (typeof chainIdentifier === "number") {
     return chainIdentifier;
   }
-  
+
   // Convert to lowercase for case-insensitive matching
   const networkName = chainIdentifier.toLowerCase();
-  
+
   // Check if the network name is in our map
   if (networkName in networkNameMap) {
     return networkNameMap[networkName];
   }
-  
+
   // Try parsing as a number
   const parsedId = parseInt(networkName);
   if (!isNaN(parsedId)) {
     return parsedId;
   }
-  
+
   // Default to mainnet if not found
   return DEFAULT_CHAIN_ID;
 }
@@ -312,18 +333,20 @@ export function resolveChainId(chainIdentifier: number | string): number {
  * @returns The chain configuration
  * @throws Error if the network is not supported (when string is provided)
  */
-export function getChain(chainIdentifier: number | string = DEFAULT_CHAIN_ID): Chain {
-  if (typeof chainIdentifier === 'string') {
+export function getChain(
+  chainIdentifier: number | string = DEFAULT_CHAIN_ID
+): Chain {
+  if (typeof chainIdentifier === "string") {
     const networkName = chainIdentifier.toLowerCase();
     // Try to get from direct network name mapping first
     if (networkNameMap[networkName]) {
       return chainMap[networkNameMap[networkName]] || mainnet;
     }
-    
+
     // If not found, throw an error
     throw new Error(`Unsupported network: ${chainIdentifier}`);
   }
-  
+
   // If it's a number, return the chain from chainMap
   return chainMap[chainIdentifier] || mainnet;
 }
@@ -333,11 +356,14 @@ export function getChain(chainIdentifier: number | string = DEFAULT_CHAIN_ID): C
  * @param chainIdentifier Chain ID (number) or network name (string)
  * @returns The RPC URL for the specified chain
  */
-export function getRpcUrl(chainIdentifier: number | string = DEFAULT_CHAIN_ID): string {
-  const chainId = typeof chainIdentifier === 'string' 
-    ? resolveChainId(chainIdentifier) 
-    : chainIdentifier;
-    
+export function getRpcUrl(
+  chainIdentifier: number | string = DEFAULT_CHAIN_ID
+): string {
+  const chainId =
+    typeof chainIdentifier === "string"
+      ? resolveChainId(chainIdentifier)
+      : chainIdentifier;
+
   return rpcUrlMap[chainId] || DEFAULT_RPC_URL;
 }
 
@@ -347,53 +373,6 @@ export function getRpcUrl(chainIdentifier: number | string = DEFAULT_CHAIN_ID): 
  */
 export function getSupportedNetworks(): string[] {
   return Object.keys(networkNameMap)
-    .filter(name => name.length > 2) // Filter out short aliases
+    .filter((name) => name.length > 2) // Filter out short aliases
     .sort();
-} 
-// Patch for src/core/chains.ts
-// Import the IOTA chain configurations
-import {
-  // Existing imports...
-  iotaMainnet,
-  iotaTestnet,
-  shimmerEVM
-} from './iota-chains.js';
-
-// Add to chainMap
-export const chainMap: Record<number, Chain> = {
-  // Existing chains...
-  
-  // IOTA Networks
-  1074: iotaMainnet,
-  1075: iotaTestnet,
-  148: shimmerEVM,
-  
-  // Other chains...
-};
-
-// Add to networkNameMap
-export const networkNameMap: Record<string, number> = {
-  // Existing networks...
-  
-  // IOTA Networks
-  'iota': 1074,
-  'iota-evm': 1074,
-  'iota-mainnet': 1074,
-  'iota-testnet': 1075,
-  'shimmer': 148,
-  'shimmer-evm': 148,
-  
-  // Other networks...
-};
-
-// Add to rpcUrlMap
-export const rpcUrlMap: Record<number, string> = {
-  // Existing RPC URLs...
-  
-  // IOTA Networks
-  1074: 'https://evm.wasp.sc.iota.org',
-  1075: 'https://testnet.evm.wasp.sc.iota.org',
-  148: 'https://json-rpc.evm.shimmer.network',
-  
-  // Other RPC URLs...
-};
+}
