@@ -4,14 +4,14 @@
       "command": "npx",
       "args": [
         "-y",
-        "@mcpdotdirect/evm-mcp-server"
+        "@Danielmark001/evm-mcp-server"
       ]
     },
     "evm-mcp-http": {
       "command": "npx",
       "args": [
         "-y", 
-        "@mcpdotdirect/evm-mcp-server", 
+        "@Danielmark001/evm-mcp-server", 
         "--http"
       ]
     }
