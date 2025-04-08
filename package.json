@@ -1,11 +1,11 @@
 {
-  "name": "@mcpdotdirect/iota-mcp-server",
+  "name": "@mcpdotdirect/iota_evm_mcp_server",
   "module": "src/index.ts",
   "type": "module",
   "version": "1.0.0",
   "description": "Model Context Protocol (MCP) server for interacting with IOTA and other EVM-compatible networks",
   "bin": {
-    "iota-mcp-server": "./bin/cli.js"
+    "iota_evm_mcp_server": "./bin/cli.js"
   },
   "main": "build/index.js",
   "files": [
@@ -65,12 +65,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/iota-angelhack/iota-mcp-server"
+    "url": "https://github.com/Danielmark001/iota_evm_mcp_server"
   },
   "bugs": {
-    "url": "https://github.com/iota-angelhack/iota-mcp-server/issues"
+    "url": "https://github.com/Danielmark001/iota_evm_mcp_server/issues"
   },
-  "homepage": "https://github.com/iota-angelhack/iota-mcp-server#readme",
+  "homepage": "https://github.com/Danielmark001/iota_evm_mcp_server#readme",
   "publishConfig": {
     "access": "public"
   }
