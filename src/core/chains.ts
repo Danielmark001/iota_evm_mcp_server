@@ -350,3 +350,50 @@ export function getSupportedNetworks(): string[] {
     .filter(name => name.length > 2) // Filter out short aliases
     .sort();
 } 
+// Patch for src/core/chains.ts
+// Import the IOTA chain configurations
+import {
+  // Existing imports...
+  iotaMainnet,
+  iotaTestnet,
+  shimmerEVM
+} from './iota-chains.js';
+
+// Add to chainMap
+export const chainMap: Record<number, Chain> = {
+  // Existing chains...
+  
+  // IOTA Networks
+  1074: iotaMainnet,
+  1075: iotaTestnet,
+  148: shimmerEVM,
+  
+  // Other chains...
+};
+
+// Add to networkNameMap
+export const networkNameMap: Record<string, number> = {
+  // Existing networks...
+  
+  // IOTA Networks
+  'iota': 1074,
+  'iota-evm': 1074,
+  'iota-mainnet': 1074,
+  'iota-testnet': 1075,
+  'shimmer': 148,
+  'shimmer-evm': 148,
+  
+  // Other networks...
+};
+
+// Add to rpcUrlMap
+export const rpcUrlMap: Record<number, string> = {
+  // Existing RPC URLs...
+  
+  // IOTA Networks
+  1074: 'https://evm.wasp.sc.iota.org',
+  1075: 'https://testnet.evm.wasp.sc.iota.org',
+  148: 'https://json-rpc.evm.shimmer.network',
+  
+  // Other RPC URLs...
+};
