@@ -473,7 +473,7 @@ export function registerIOTAResources(server: McpServer) {
                 {
                   network,
                   status: isHealthy ? "healthy" : "delayed",
-                  latestBlock: blockNumber.toString(),
+                  latestBlock: blockNumber ? blockNumber.toString() : "unknown",
                   blockTimestamp: timestamp.toString(),
                   blockDelay: `${blockDelay} seconds ago`,
                   finality: isHealthy ? "high" : "uncertain",
