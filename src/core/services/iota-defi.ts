@@ -1,28 +1,28 @@
 // src/core/services/iota-defi.ts
 /**
  * IOTA DeFi Module
- * 
+ *
  * This module provides functionality for interacting with DeFi protocols on IOTA networks,
  * including liquidity pools, lending markets, staking, and token analytics.
- * 
+ *
  * The implementation uses the viem library for EVM interactions and is specifically
  * tailored for IOTA EVM, IOTA Testnet, and Shimmer networks.
  */
 
-import { 
-  type Address, 
-  type Hash, 
+import {
+  type Address,
+  type Hash,
   parseAbi,
   getContract,
   formatUnits,
   formatEther,
   encodeAbiParameters,
-  parseAbiParameters
-} from 'viem';
-import { getPublicClient } from './clients.js';
-import { resolveAddress } from './ens.js';
-import { isIOTANetwork } from './iota.js';
-import { readContract } from './contracts.js';
+  parseAbiParameters,
+} from "viem";
+import { getPublicClient } from "./clients.js";
+import { resolveAddress } from "./ens.js";
+import { isIOTANetwork } from "./iota.js";
+import { readContract } from "./contracts.js";
 
 // ====================
 // === TYPE DEFINITIONS
@@ -173,99 +173,105 @@ export interface TopTokensResponse {
 
 // DEX Contract ABIs - partial interfaces for common functions
 const uniswapV2PairAbi = parseAbi([
-  'function getReserves() view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast)',
-  'function token0() view returns (address)',
-  'function token1() view returns (address)',
-  'function totalSupply() view returns (uint256)',
-  'function factory() view returns (address)'
+  "function getReserves() view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast)",
+  "function token0() view returns (address)",
+  "function token1() view returns (address)",
+  "function totalSupply() view returns (uint256)",
+  "function factory() view returns (address)",
 ]);
 
 const uniswapV2FactoryAbi = parseAbi([
-  'function getPair(address tokenA, address tokenB) view returns (address pair)',
-  'function allPairsLength() view returns (uint256)',
-  'function allPairs(uint256) view returns (address)'
+  "function getPair(address tokenA, address tokenB) view returns (address pair)",
+  "function allPairsLength() view returns (uint256)",
+  "function allPairs(uint256) view returns (address)",
 ]);
 
 const erc20Abi = parseAbi([
-  'function balanceOf(address) view returns (uint256)',
-  'function decimals() view returns (uint8)',
-  'function symbol() view returns (string)',
-  'function name() view returns (string)',
-  'function totalSupply() view returns (uint256)'
+  "function balanceOf(address) view returns (uint256)",
+  "function decimals() view returns (uint8)",
+  "function symbol() view returns (string)",
+  "function name() view returns (string)",
+  "function totalSupply() view returns (uint256)",
 ]);
 
 // Lending protocol ABIs
 const compoundComptrollerAbi = parseAbi([
-  'function getAllMarkets() view returns (address[])',
-  'function markets(address) view returns (bool isListed, uint256 collateralFactorMantissa, bool isComped)',
-  'function getAccountLiquidity(address) view returns (uint256, uint256, uint256)',
-  'function claimComp(address)',
-  'function compAccrued(address) view returns (uint256)'
+  "function getAllMarkets() view returns (address[])",
+  "function markets(address) view returns (bool isListed, uint256 collateralFactorMantissa, bool isComped)",
+  "function getAccountLiquidity(address) view returns (uint256, uint256, uint256)",
+  "function claimComp(address)",
+  "function compAccrued(address) view returns (uint256)",
 ]);
 
 const cTokenAbi = parseAbi([
-  'function underlying() view returns (address)',
-  'function supplyRatePerBlock() view returns (uint256)',
-  'function borrowRatePerBlock() view returns (uint256)',
-  'function totalSupply() view returns (uint256)',
-  'function totalBorrows() view returns (uint256)',
-  'function exchangeRateStored() view returns (uint256)',
-  'function getCash() view returns (uint256)',
-  'function borrowBalanceStored(address) view returns (uint256)',
-  'function balanceOf(address) view returns (uint256)'
+  "function underlying() view returns (address)",
+  "function supplyRatePerBlock() view returns (uint256)",
+  "function borrowRatePerBlock() view returns (uint256)",
+  "function totalSupply() view returns (uint256)",
+  "function totalBorrows() view returns (uint256)",
+  "function exchangeRateStored() view returns (uint256)",
+  "function getCash() view returns (uint256)",
+  "function borrowBalanceStored(address) view returns (uint256)",
+  "function balanceOf(address) view returns (uint256)",
 ]);
 
 // Known IOTA DEXes and DEX factories by network
 // These are placeholder addresses that should be updated when real DEXes launch on IOTA networks
-const iotaDexes: Record<string, { name: string; factory: Address; router: Address }[]> = {
-  'iota': [
-    { 
-      name: 'TangleSwap', 
-      factory: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f' as Address, // Placeholder - Uniswap V2 Factory address 
-      router: '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D' as Address  // Placeholder - Uniswap V2 Router address
-    }
+const iotaDexes: Record<
+  string,
+  { name: string; factory: Address; router: Address }[]
+> = {
+  iota: [
+    {
+      name: "TangleSwap",
+      factory: "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f" as Address, // Placeholder - Uniswap V2 Factory address
+      router: "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D" as Address, // Placeholder - Uniswap V2 Router address
+    },
   ],
-  'shimmer': [
-    { 
-      name: 'ShimmerSea', 
-      factory: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f' as Address, // Placeholder - Uniswap V2 Factory address 
-      router: '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D' as Address  // Placeholder - Uniswap V2 Router address
-    }
+  shimmer: [
+    {
+      name: "ShimmerSea",
+      factory: "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f" as Address, // Placeholder - Uniswap V2 Factory address
+      router: "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D" as Address, // Placeholder - Uniswap V2 Router address
+    },
   ],
-  'iota-testnet': [
-    { 
-      name: 'TangleSwap Testnet', 
-      factory: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f' as Address, // Placeholder - Uniswap V2 Factory address 
-      router: '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D' as Address  // Placeholder - Uniswap V2 Router address
-    }
-  ]
+  "iota-testnet": [
+    {
+      name: "TangleSwap Testnet",
+      factory: "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f" as Address, // Placeholder - Uniswap V2 Factory address
+      router: "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D" as Address, // Placeholder - Uniswap V2 Router address
+    },
+  ],
 };
 
 // Known lending protocols on IOTA
 // These are placeholder addresses that should be updated when real lending protocols launch
-const iotaLendingProtocols: Record<string, { name: string; comptroller: Address; markets: Address[] }[]> = {
-  'iota': [
-    { 
-      name: 'IOTA Lend', 
-      comptroller: '0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B' as Address, // Placeholder - Compound Comptroller address
+const iotaLendingProtocols: Record<
+  string,
+  { name: string; comptroller: Address; markets: Address[] }[]
+> = {
+  iota: [
+    {
+      name: "IOTA Lend",
+      comptroller: "0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B" as Address, // Placeholder - Compound Comptroller address
       markets: [
-        '0x4CaE2cD5EcD7A4C42A468a9cE2d8cE7aEdf58886' as Address, // IOTA (placeholder)
-        '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48' as Address, // USDC (placeholder)
-        '0xdAC17F958D2ee523a2206206994597C13D831ec7' as Address  // USDT (placeholder)
-      ]
-    }
+        "0x4CaE2cD5EcD7A4C42A468a9cE2d8cE7aEdf58886" as Address, // IOTA (placeholder)
+        "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" as Address, // USDC (placeholder)
+        "0xdAC17F958D2ee523a2206206994597C13D831ec7" as Address, // USDT (placeholder)
+      ],
+    },
   ],
-  'shimmer': [
-    { 
-      name: 'Shimmer Lend', 
-      comptroller: '0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B' as Address, // Placeholder - Compound Comptroller address
+  shimmer: [
+    {
+      name: "Shimmer Lend",
+      comptroller: "0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B" as Address, // Placeholder - Compound Comptroller address
       markets: [
-        '0x1074012F5E00Db5eB0D38a4e2C9EcB0C8a959511' as Address, // SMR (placeholder)
-        '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48' as Address, // USDC (placeholder)
-      ]
-    }
+        "0x1074012F5E00Db5eB0D38a4e2C9EcB0C8a959511" as Address, // SMR (placeholder)
+        "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" as Address, // USDC (placeholder)
+      ],
+    },
   ],
-  'iota-testnet': []
+  "iota-testnet": [],
 };
 
 // ==============================
@@ -279,38 +285,43 @@ const iotaLendingProtocols: Record<string, { name: string; comptroller: Address;
  * @returns Information about liquidity pools
  */
 export async function getIOTALiquidityPools(
-  network = 'iota',
+  network = "iota",
   tokenAddressOrEns?: string
 ): Promise<LiquidityPoolsResponse> {
   // Validate IOTA network
   if (!isIOTANetwork(network)) {
-    throw new Error(`${network} is not a valid IOTA network. Valid values are: iota, iota-testnet, shimmer`);
+    throw new Error(
+      `${network} is not a valid IOTA network. Valid values are: iota, iota-testnet, shimmer`
+    );
   }
-  
+
   // Resolve token address if provided
   let tokenAddress: Address | undefined;
   if (tokenAddressOrEns) {
-    tokenAddress = await resolveAddress(tokenAddressOrEns, network) as Address;
+    tokenAddress = (await resolveAddress(
+      tokenAddressOrEns,
+      network
+    )) as Address;
   }
-  
+
   const client = getPublicClient(network);
-  
+
   // Get DEXes for the selected network
   const dexes = iotaDexes[network] || [];
   if (dexes.length === 0) {
     return {
       network,
-      dexName: 'Unknown',
-      pools: []
+      dexName: "Unknown",
+      pools: [],
     };
   }
-  
+
   // For simplicity, we'll use the first DEX listed for the network
   const dex = dexes[0];
-  
+
   // Try to get pool information
   const pools: LiquidityPool[] = [];
-  
+
   try {
     // Connect to the factory contract
     const factoryContract = getContract({
@@ -318,7 +329,7 @@ export async function getIOTALiquidityPools(
       abi: uniswapV2FactoryAbi,
       client,
     });
-    
+
     // Get the total number of pairs (limited to 5 for performance)
     let pairsToQuery = 5;
     try {
@@ -328,34 +339,40 @@ export async function getIOTALiquidityPools(
         pairsToQuery = Math.min(5, Number(pairsLength));
       }
     } catch (error) {
-      console.error('Error fetching pairs length:', error);
+      console.error("Error fetching pairs length:", error);
     }
-    
+
     // Get pairs
-    for (let i = 0; i < pairsToQuery; i++) {
+      for (let i = 0; i < pairsToQuery; i++) {
+        let pairAddress: Address = await factoryContract.read.allPairs([
+          BigInt(i),
+        ]);
       try {
-        let pairAddress: Address;
         
+
         // If we're filtering by token, get the specific pair
         if (tokenAddress) {
           // Try to find a pair with IOTA or a stablecoin as the other token
           // Known stablecoins/base tokens
           const baseTokens = [
-            '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', // USDC placeholder
-            '0xdAC17F958D2ee523a2206206994597C13D831ec7', // USDT placeholder
-            '0x4CaE2cD5EcD7A4C42A468a9cE2d8cE7aEdf58886', // IOTA token
+            "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC placeholder
+            "0xdAC17F958D2ee523a2206206994597C13D831ec7", // USDT placeholder
+            "0x4CaE2cD5EcD7A4C42A468a9cE2d8cE7aEdf58886", // IOTA token
           ];
-          
+
           // Try each base token to find a pair
           let foundPair = false;
           for (const baseToken of baseTokens) {
             try {
               const pair = await factoryContract.read.getPair([
                 tokenAddress,
-                baseToken as Address
+                baseToken as Address,
               ]);
-              
-              if (pair && pair !== '0x0000000000000000000000000000000000000000') {
+
+              if (
+                pair &&
+                pair !== "0x0000000000000000000000000000000000000000"
+              ) {
                 pairAddress = pair;
                 foundPair = true;
                 break;
@@ -364,7 +381,7 @@ export async function getIOTALiquidityPools(
               // Continue to next base token
             }
           }
-          
+
           // If we didn't find a pair, skip
           if (!foundPair) {
             continue;
@@ -373,57 +390,62 @@ export async function getIOTALiquidityPools(
           // Get the pair at index i
           pairAddress = await factoryContract.read.allPairs([BigInt(i)]);
         }
-        
+
         // Connect to the pair contract
         const pairContract = getContract({
           address: pairAddress,
           abi: uniswapV2PairAbi,
           client,
         });
-        
+
         // Get pair data
         const [reserves, token0Address, token1Address] = await Promise.all([
           pairContract.read.getReserves(),
           pairContract.read.token0(),
           pairContract.read.token1(),
         ]);
-        
+
         // Get token details
         const token0Contract = getContract({
           address: token0Address,
           abi: erc20Abi,
           client,
         });
-        
+
         const token1Contract = getContract({
           address: token1Address,
           abi: erc20Abi,
           client,
         });
-        
+
         // Get token data
         const [
-          token0Symbol, token0Name, token0Decimals,
-          token1Symbol, token1Name, token1Decimals
+          token0Symbol,
+          token0Name,
+          token0Decimals,
+          token1Symbol,
+          token1Name,
+          token1Decimals,
         ] = await Promise.all([
-          token0Contract.read.symbol().catch(() => 'Unknown'),
-          token0Contract.read.name().catch(() => 'Unknown'),
+          token0Contract.read.symbol().catch(() => "Unknown"),
+          token0Contract.read.name().catch(() => "Unknown"),
           token0Contract.read.decimals().catch(() => 18),
-          token1Contract.read.symbol().catch(() => 'Unknown'),
-          token1Contract.read.name().catch(() => 'Unknown'),
+          token1Contract.read.symbol().catch(() => "Unknown"),
+          token1Contract.read.name().catch(() => "Unknown"),
           token1Contract.read.decimals().catch(() => 18),
         ]);
-        
+
         // Format reserves
         const reserve0 = formatUnits(reserves[0], Number(token0Decimals));
         const reserve1 = formatUnits(reserves[1], Number(token1Decimals));
-        
+
         // For this simplified implementation, we'll use placeholder values for some metrics
         // In a real implementation, you would calculate these from on-chain data
-        const estimatedApr = '5.2%'; // Placeholder
-        const volume24h = '10,000'; // Placeholder
-        const fee = '0.3%'; // Standard DEX fee
+        const estimatedApr = "5.2%"; // Placeholder
+        const volume24h = "10,000"; // Placeholder
+        const fee = "0.3%"; // Standard DEX fee
         
+
         // Add pool to results
         pools.push({
           pairAddress,
@@ -440,13 +462,13 @@ export async function getIOTALiquidityPools(
           reserves: {
             reserve0,
             reserve1,
-            reserveUSD: '0', // Would need price oracle to calculate
+            reserveUSD: "0", // Would need price oracle to calculate
           },
           apr: estimatedApr,
           volume24h,
           fee,
         });
-        
+
         // If we're filtering by token and found a pair, we can break
         if (tokenAddress) {
           break;
@@ -456,9 +478,9 @@ export async function getIOTALiquidityPools(
       }
     }
   } catch (error) {
-    console.error('Error fetching liquidity pools:', error);
+    console.error("Error fetching liquidity pools:", error);
   }
-  
+
   return {
     network,
     dexName: dex.name,
@@ -476,31 +498,33 @@ export async function getIOTALiquidityPools(
  * @returns Information about lending markets
  */
 export async function getIOTALendingMarkets(
-  network = 'iota'
+  network = "iota"
 ): Promise<LendingMarketsResponse> {
   // Validate IOTA network
   if (!isIOTANetwork(network)) {
-    throw new Error(`${network} is not a valid IOTA network. Valid values are: iota, iota-testnet, shimmer`);
+    throw new Error(
+      `${network} is not a valid IOTA network. Valid values are: iota, iota-testnet, shimmer`
+    );
   }
-  
+
   const client = getPublicClient(network);
-  
+
   // Get lending protocols for the selected network
   const protocols = iotaLendingProtocols[network] || [];
   if (protocols.length === 0) {
     return {
       network,
-      protocol: 'Unknown',
-      markets: []
+      protocol: "Unknown",
+      markets: [],
     };
   }
-  
+
   // For simplicity, we'll use the first protocol listed for the network
   const protocol = protocols[0];
-  
+
   // Try to get market information
   const markets: LendingMarket[] = [];
-  
+
   try {
     // Connect to the comptroller contract
     const comptrollerContract = getContract({
@@ -508,17 +532,21 @@ export async function getIOTALendingMarkets(
       abi: compoundComptrollerAbi,
       client,
     });
-    
+
     // Get all markets
     let marketAddresses: Address[] = [];
     try {
-      marketAddresses = await comptrollerContract.read.getAllMarkets();
+        const markets = await comptrollerContract.read.getAllMarkets();
+        marketAddresses = [...markets];
     } catch (error) {
       // Fallback to predefined markets if getAllMarkets fails
-      console.error('Error fetching markets from comptroller, using predefined markets:', error);
+      console.error(
+        "Error fetching markets from comptroller, using predefined markets:",
+        error
+      );
       marketAddresses = protocol.markets;
     }
-    
+
     // Process each market
     for (const marketAddress of marketAddresses) {
       try {
@@ -528,43 +556,50 @@ export async function getIOTALendingMarkets(
           abi: cTokenAbi,
           client,
         });
-        
+
         // Get underlying token address
         let underlyingTokenAddress: Address;
         try {
           underlyingTokenAddress = await cTokenContract.read.underlying();
         } catch (error) {
           // If this fails, it might be a cETH-like token without an underlying method
-          console.error('Error fetching underlying token, might be native token:', error);
+          console.error(
+            "Error fetching underlying token, might be native token:",
+            error
+          );
           // Use a placeholder address for the native token
-          underlyingTokenAddress = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' as Address;
+          underlyingTokenAddress =
+            "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE" as Address;
         }
-        
+
         // Connect to the underlying token contract
-        let tokenSymbol = 'Unknown';
-        let tokenName = 'Unknown';
+        let tokenSymbol = "Unknown";
+        let tokenName = "Unknown";
         let tokenDecimals = 18;
-        
-        if (underlyingTokenAddress !== '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE') {
+
+        if (
+          underlyingTokenAddress !==
+          "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
+        ) {
           const tokenContract = getContract({
             address: underlyingTokenAddress,
             abi: erc20Abi,
             client,
           });
-          
+
           // Get token details
           [tokenSymbol, tokenName, tokenDecimals] = await Promise.all([
-            tokenContract.read.symbol().catch(() => 'Unknown'),
-            tokenContract.read.name().catch(() => 'Unknown'),
-            tokenContract.read.decimals().catch(() => 18)
+            tokenContract.read.symbol().catch(() => "Unknown"),
+            tokenContract.read.name().catch(() => "Unknown"),
+            tokenContract.read.decimals().catch(() => 18),
           ]);
         } else {
           // Native token (IOTA/SMR)
-          tokenSymbol = network === 'shimmer' ? 'SMR' : 'MIOTA';
-          tokenName = network === 'shimmer' ? 'Shimmer' : 'IOTA';
+          tokenSymbol = network === "shimmer" ? "SMR" : "MIOTA";
+          tokenName = network === "shimmer" ? "Shimmer" : "IOTA";
           tokenDecimals = 6; // IOTA tokens typically use 6 decimals
         }
-        
+
         // Get market data
         const [
           supplyRatePerBlock,
@@ -573,7 +608,7 @@ export async function getIOTALendingMarkets(
           totalSupply,
           totalBorrows,
           cash,
-          marketInfo
+          marketInfo,
         ] = await Promise.all([
           cTokenContract.read.supplyRatePerBlock().catch(() => BigInt(0)),
           cTokenContract.read.borrowRatePerBlock().catch(() => BigInt(0)),
@@ -581,36 +616,57 @@ export async function getIOTALendingMarkets(
           cTokenContract.read.totalSupply().catch(() => BigInt(0)),
           cTokenContract.read.totalBorrows().catch(() => BigInt(0)),
           cTokenContract.read.getCash().catch(() => BigInt(0)),
-          comptrollerContract.read.markets([marketAddress]).catch(() => [false, BigInt(0), false])
+          comptrollerContract.read
+            .markets([marketAddress])
+            .catch(() => [false, BigInt(0), false]),
         ]);
-        
+
         // Calculate APYs (assuming blocks are 2 seconds and 15,768,000 blocks per year on IOTA)
         // These numbers are approximate and would need adjusting for actual IOTA block times
         const blocksPerYear = BigInt(15768000);
-        
+
         // Convert rate per block to APY
         // (1 + rate per block) ^ blocks per year - 1
-        const supplyApy = (Math.pow(1 + Number(supplyRatePerBlock) / 1e18, Number(blocksPerYear)) - 1) * 100;
-        const borrowApy = (Math.pow(1 + Number(borrowRatePerBlock) / 1e18, Number(blocksPerYear)) - 1) * 100;
-        
+        const supplyApy =
+          (Math.pow(
+            1 + Number(supplyRatePerBlock) / 1e18,
+            Number(blocksPerYear)
+          ) -
+            1) *
+          100;
+        const borrowApy =
+          (Math.pow(
+            1 + Number(borrowRatePerBlock) / 1e18,
+            Number(blocksPerYear)
+          ) -
+            1) *
+          100;
+
         // Calculate total supplied in underlying tokens
         // totalSupply * exchangeRate / 1e18
         const scaledExchangeRate = Number(exchangeRate) / 1e18;
-        const totalSuppliedUnderlying = Number(totalSupply) * scaledExchangeRate / Math.pow(10, 18 - tokenDecimals);
-        
+        const totalSuppliedUnderlying =
+          (Number(totalSupply) * scaledExchangeRate) /
+          Math.pow(10, 18 - tokenDecimals);
+
         // Format values
         const formattedSupplyApy = `${supplyApy.toFixed(2)}%`;
         const formattedBorrowApy = `${borrowApy.toFixed(2)}%`;
-        const formattedTotalSupplied = totalSuppliedUnderlying.toLocaleString(undefined, {
-          maximumFractionDigits: 2
-        });
+        const formattedTotalSupplied = totalSuppliedUnderlying.toLocaleString(
+          undefined,
+          {
+            maximumFractionDigits: 2,
+          }
+        );
         const formattedTotalBorrowed = formatUnits(totalBorrows, tokenDecimals);
         const formattedLiquidity = formatUnits(cash, tokenDecimals);
-        
+
         // Get collateral factor (as a percentage)
         const collateralFactorMantissa = marketInfo[1];
-        const collateralFactor = `${(Number(collateralFactorMantissa) / 1e16).toFixed(0)}%`;
-        
+        const collateralFactor = `${(
+          Number(collateralFactorMantissa) / 1e16
+        ).toFixed(0)}%`;
+
         // Add market to results
         markets.push({
           tokenAddress: underlyingTokenAddress,
@@ -629,9 +685,9 @@ export async function getIOTALendingMarkets(
       }
     }
   } catch (error) {
-    console.error('Error fetching lending markets:', error);
+    console.error("Error fetching lending markets:", error);
   }
-  
+
   return {
     network,
     protocol: protocol.name,
@@ -709,7 +765,8 @@ export async function getIOTAUserLendingPositions(
     // Get all markets
     let marketAddresses: Address[] = [];
     try {
-      marketAddresses = await comptrollerContract.read.getAllMarkets();
+        const markets = await comptrollerContract.read.getAllMarkets();
+        marketAddresses = [...markets];
     } catch (error) {
       // Fallback to predefined markets if getAllMarkets fails
       console.error(
@@ -850,7 +907,7 @@ export async function getIOTAUserLendingPositions(
         const formattedRewardApy = `${rewardApy.toFixed(2)}%`;
 
         // Check if this asset is being used as collateral
-        const isCollateral = marketInfo[0]; // isListed from markets() call
+        const isCollateral = Boolean(marketInfo[0]); // isListed from markets() call
 
         // Simplistic price estimation (in a real implementation, you'd use price oracles)
         // For this example, we'll use 1 USD for stablecoins and placeholder prices for others
