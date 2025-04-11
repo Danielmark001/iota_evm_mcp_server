@@ -7,8 +7,9 @@
     "strict": true,
     "outDir": "./build",
     "sourceMap": true,
-    "declaration": true
+    "declaration": true,
+    "types": ["bun-types"]
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "test/**/*", "types.d.ts"],
   "exclude": ["node_modules", "build"]
 }
