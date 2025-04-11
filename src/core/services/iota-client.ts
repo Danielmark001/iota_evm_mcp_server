@@ -1,4 +1,4 @@
-import { Client } from "@iota/client";
+import { Client, initLogger, Utils, SecretManager } from "@iota/sdk";
 import { EventEmitter } from "events";
 import {
   IOTA_CONFIG,
@@ -8,25 +8,31 @@ import {
 
 export class IOTAClientWrapper extends EventEmitter {
   private client: Client;
+  private secretManager: any; // Using any for now due to type mismatch
   private isConnected: boolean = false;
 
   constructor() {
     super();
+    // Initialize logger
+    initLogger();
+
     this.client = new Client({
-      nodes: IOTA_CONFIG.nodes,
-      localPow: IOTA_CONFIG.localPow,
+      nodes: [IOTA_CONFIG.nodes[0].url],
     });
+
+    // Initialize secret manager with a mnemonic
+    this.secretManager = {
+      mnemonic:
+        process.env.IOTA_MNEMONIC ||
+        "giant dynamic museum toddler six deny defense ostrich bomb access mercy blood explain muscle shoot shallow glad autumn author calm heavy hawk abuse rally",
+    };
   }
 
   async connect(): Promise<boolean> {
     try {
-      const nodeInfo = await this.client.getInfo();
+      const nodeInfo = await this.client.getNodeInfo(IOTA_CONFIG.nodes[0].url);
       console.log("Connected to IOTA network:", nodeInfo);
       this.isConnected = true;
-
-      // Start listening for network events
-      this.startEventListeners();
-
       return true;
     } catch (error) {
       console.error("Failed to connect to IOTA network:", error);
@@ -35,68 +41,40 @@ export class IOTAClientWrapper extends EventEmitter {
   }
 
   private startEventListeners() {
-    // Poll for new transactions
+    // Subscribe to events using MQTT
     setInterval(async () => {
       if (!this.isConnected) return;
 
       try {
-        const transactions = await this.client.getTransactions();
-        transactions.forEach((tx) => {
-          this.emit(IOTA_NETWORK_EVENTS.TRANSACTION, {
-            type: IOTA_NETWORK_EVENTS.TRANSACTION,
-            data: tx,
-          });
+        const info = await this.client.getNodeInfo(IOTA_CONFIG.nodes[0].url);
+        this.emit(IOTA_NETWORK_EVENTS.BLOCK, {
+          type: IOTA_NETWORK_EVENTS.BLOCK,
+          data: info,
         });
       } catch (error) {
-        console.error("Error fetching transactions:", error);
-      }
-    }, 5000);
-
-    // Poll for new blocks
-    setInterval(async () => {
-      if (!this.isConnected) return;
-
-      try {
-        const blocks = await this.client.getBlocks();
-        blocks.forEach((block) => {
-          this.emit(IOTA_NETWORK_EVENTS.BLOCK, {
-            type: IOTA_NETWORK_EVENTS.BLOCK,
-            data: block,
-          });
-        });
-      } catch (error) {
-        console.error("Error fetching blocks:", error);
+        console.error("Error fetching node info:", error);
       }
     }, 10000);
   }
 
-  async sendTransaction(amount: string, recipient: string): Promise<string> {
+  async sendTransaction(
+    amount: bigint,
+    recipientAddress: string
+  ): Promise<string> {
     if (!this.isConnected) {
       throw new Error("Not connected to IOTA network");
     }
 
     try {
-      // Prepare transaction
-      const transaction = await this.client.buildBasicOutput({
-        amount,
-        unlockConditions: [
-          {
-            type: IOTA_TRANSACTION_TYPES.BASIC as 0,
-            address: {
-              type: 0,
-              pubKeyHash: recipient,
-            },
-          },
-        ],
+      // Build block with output
+      const blockId = await this.client.buildAndPostBlock(this.secretManager, {
+        output: {
+          address: recipientAddress,
+          amount: amount.toString(),
+        },
       });
 
-      // Sign and submit transaction
-      const signedTransaction = await this.client.signTransaction(transaction);
-      const transactionId = await this.client.submitTransaction(
-        signedTransaction
-      );
-
-      return transactionId;
+      return blockId[0];
     } catch (error) {
       console.error("Transaction failed:", error);
       throw error;
@@ -109,7 +87,26 @@ export class IOTAClientWrapper extends EventEmitter {
     }
 
     try {
-      const balance = await this.client.getBalance(address);
+      // Get balance using protocol parameters
+      const protocolParameters = await this.client.getProtocolParameters();
+      const response = await this.client.basicOutputIds([
+        {
+          address: address,
+        },
+      ]);
+
+      let balance = BigInt(0);
+
+      // Get all outputs and sum their amounts
+      if (response && response.items) {
+        for (const outputId of response.items) {
+          const output = await this.client.getOutput(outputId);
+          if (output && output.output) {
+            balance += BigInt(output.output.amount || 0);
+          }
+        }
+      }
+
       return balance.toString();
     } catch (error) {
       console.error("Failed to get balance:", error);

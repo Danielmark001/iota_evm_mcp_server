@@ -5,6 +5,8 @@
 ![EVM Networks](https://img.shields.io/badge/Networks-30+-green)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6)
 ![Viem](https://img.shields.io/badge/Viem-1.0+-green)
+![Node Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)
+![Bun Version](https://img.shields.io/badge/bun-%3E%3D1.0.0-brightgreen)
 
 A comprehensive Model Context Protocol (MCP) server that provides blockchain services for IOTA and multiple EVM-compatible networks. This server enables AI agents to interact with IOTA, Shimmer, Ethereum, Optimism, Arbitrum, Base, Polygon, and many other EVM chains through a unified interface.
 
@@ -80,12 +82,14 @@ All services are exposed through a consistent interface of MCP tools and resourc
 ### Token Services
 
 - **ERC20 Tokens**
+
   - Get token metadata (name, symbol, decimals, supply)
   - Check token balances
   - Transfer tokens between addresses
   - Approve spending allowances
 
 - **NFTs (ERC721)**
+
   - Get collection and token metadata
   - Verify token ownership
   - Transfer NFTs between addresses
@@ -102,7 +106,6 @@ All services are exposed through a consistent interface of MCP tools and resourc
 - **Write services** with private key signing
 - **Contract verification** to distinguish from EOAs
 - **Event logs** retrieval and filtering
-
 
 ## 🌐 Supported Networks
 
@@ -182,6 +185,33 @@ Using npm:
 
 ```bash
 npm install
+```
+
+### Environment Setup
+
+1. Copy the example environment file:
+
+```bash
+cp .env.example .env
+```
+
+2. Update the `.env` file with your configuration:
+
+```bash
+# Server Configuration
+PORT=3001
+HOST=0.0.0.0
+DEFAULT_CHAIN_ID=1074  # IOTA EVM Mainnet
+
+# IOTA Configuration
+IOTA_JWT_TOKEN=your_jwt_token_here
+IOTA_NODE_URL=https://api.iota.org
+IOTA_MNEMONIC=your_mnemonic_here  # Required for sending transactions
+
+# SSL Configuration (optional for development)
+SSL_CERT_PATH=./certs/client.crt
+SSL_KEY_PATH=./certs/client.key
+SSL_CA_PATH=./certs/iota-root-ca.crt
 ```
 
 ## ⚙️ Configuration
@@ -293,16 +323,20 @@ The server provides a comprehensive set of tools and resources for interacting w
 
 ## 🧪 Testing
 
-Run the test suite to verify the server functionality:
+Run the test suite:
 
 ```bash
+# Using Bun (recommended)
 bun test
+
+# Using npm
+npm test
 ```
 
 Run specific test files:
 
 ```bash
-bun test test/iota.test.ts
+bun test test/iota-defi-agent.test.ts
 ```
 
 ## 🤝 Contributing
@@ -310,16 +344,48 @@ bun test test/iota.test.ts
 Contributions are welcome! Please feel free to submit a Pull Request.
 
 1. Fork the repository
-2. Create your feature branch: `git checkout -b feature/amazing-feature`
-3. Commit your changes: `git commit -m 'Add some amazing feature'`
-4. Push to the branch: `git push origin feature/amazing-feature`
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📜 License
+Please make sure to update tests as appropriate and follow our code of conduct.
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+1. **Node Version Error**
+
+   - Make sure you have Node.js 18.0.0 or higher installed
+   - Use `nvm` to manage Node.js versions
+
+2. **Bun Installation Issues**
+
+   - Follow the official [Bun installation guide](https://bun.sh/)
+   - Try reinstalling Bun if you encounter issues
+
+3. **IOTA Connection Issues**
+
+   - Verify your IOTA node URL is correct
+   - Check your JWT token is valid
+   - Ensure your network connection is stable
+
+4. **Build Errors**
+   - Run `bun install` to ensure all dependencies are installed
+   - Clear the build directory: `rm -rf build/`
+   - Check TypeScript configuration in `tsconfig.json`
+
+### Getting Help
+
+- Open an issue on GitHub
+- Check our [FAQ](https://github.com/Danigelmark001/iota_evm_mcp_server/wiki/FAQ)
+
+## 📝 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgements
+## 🙏 Acknowledgments
 
 - [IOTA Foundation](https://www.iota.org/) for their amazing technology
 - [Model Context Protocol](https://modelcontextprotocol.github.io/) for enabling AI-blockchain interaction

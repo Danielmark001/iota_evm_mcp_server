@@ -108,8 +108,9 @@ export class IOTADefiAgent {
 
   async executeIOTATransfer(amount: string, recipient: string) {
     try {
+      const amountBigInt = BigInt(amount);
       const transactionId = await this.iotaClient.sendTransaction(
-        amount,
+        amountBigInt,
         recipient
       );
 
