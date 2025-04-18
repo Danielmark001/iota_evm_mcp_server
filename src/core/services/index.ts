@@ -9,6 +9,25 @@ export * from './tokens.js';
 export * from './ens.js';
 export { utils as helpers } from './utils.js';
 
+// Export IOTA-specific services
+export { 
+  isIOTANetwork, 
+  getIOTATokenInfo, 
+  getIOTABalance, 
+  getIOTAStakingInfo, 
+  getIOTAGasPrices, 
+  estimateIOTATransactionCost,
+  deployIOTASmartContract,
+  analyzeIOTASmartContract
+} from './iota.js';
+
+// Export arbitrage services
+export {
+  getTokenPrice,
+  findArbitrageOpportunities,
+  getSupportedArbitrageTokens
+} from './arbitrage.js';
+
 // Re-export common types for convenience
 export type { 
   Address, 

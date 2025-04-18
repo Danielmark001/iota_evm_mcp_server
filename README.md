@@ -20,11 +20,11 @@ A comprehensive Model Context Protocol (MCP) server that provides blockchain ser
 - [Installation](#-installation)
 - [Server Configuration](#️-server-configuration)
 - [Usage](#-usage)
+- [Interactive Demo](#-integrating-with-ai-systems)
 - [API Reference](#-api-reference)
   - [IOTA Tools](#iota-tools)
+  - [Arbitrage Tools](#arbitrage-tools)
   - [IOTA Resources](#iota-resources)
-  - [General Tools](#general-tools)
-  - [General Resources](#general-resources)
 - [Security Considerations](#-security-considerations)
 - [Project Structure](#-project-structure)
 - [Development](#-development)
@@ -47,7 +47,7 @@ The IOTA MCP Server leverages the Model Context Protocol to provide blockchain s
 - Reading blockchain state (balances, transactions, blocks, etc.)
 - Interacting with smart contracts
 - Transferring tokens (native, ERC20, ERC721, ERC1155)
-- IOTA-specific services (staking, network status, etc.)
+- IOTA-specific services (staking, network status, gas estimation, etc.)
 - Querying token metadata and balances
 - Chain-specific services across 30+ EVM networks including IOTA networks
 - **ENS name resolution** for all address parameters (use human-readable names instead of addresses)
@@ -64,10 +64,13 @@ All services are exposed through a consistent interface of MCP tools and resourc
 - **IOTA network status** monitoring and health checks
 - **IOTA balance queries** for checking native token balances
 - **IOTA transaction analytics** with gas usage, type detection, and age analysis
-- **IOTA smart contract analysis** with function detection and standard verification
+- **IOTA smart contract deployment** for direct deployment of Solidity contracts
+- **IOTA smart contract analysis** with function detection, standard verification, and security assessment
 - **IOTA DeFi integrations** for liquidity pools, lending markets, and staking
 - **IOTA staking information** for monitoring staking activities
 - **IOTA transaction history** and analysis
+- **Gas price estimation** with network congestion analysis and transaction cost prediction
+- **Cross-chain arbitrage monitoring** for detecting profitable trading opportunities between IOTA and other networks
 - **Cross-chain comparisons** between IOTA and other networks
 
 ### Blockchain Data Access
@@ -274,6 +277,29 @@ docker run -p 3001:3001 iota_evm_mcp_server
 
 ## 🔌 Integrating with AI Systems
 
+### Interactive Demo
+
+A visual demonstration interface is included to showcase how Claude or other AI assistants can interact with IOTA blockchain data. The demo features:
+
+1. **Network Status Analysis** - Shows how AI can analyze current IOTA network conditions and gas prices
+2. **Cross-Chain Arbitrage** - Demonstrates monitoring of price differences between IOTA and other networks
+3. **Smart Contract Deployment** - Showcases AI guidance for optimal smart contract deployment
+
+To run the demo:
+
+```bash
+# Install demo dependencies
+npm run demo:install
+
+# Start both the MCP server and demo interface
+npm run demo:start
+
+# For development with hot-reloading
+npm run demo:dev
+```
+
+Then open your browser to http://localhost:3006
+
 ### Example: Using with Claude, GPT-4, or other AI assistants
 
 AI platforms that support the Model Context Protocol can directly connect to the IOTA MCP Server. For example, with a properly configured MCP-enabled AI:
@@ -313,6 +339,16 @@ The server provides a comprehensive set of tools and resources for interacting w
 - `transfer_iota`: Transfer IOTA tokens to another address
 - `get_iota_staking_info`: Get staking information
 - `verify_iota_network_status`: Check network health and status
+- `get_iota_gas_prices`: Get current gas prices with network congestion analysis
+- `estimate_iota_transaction_cost`: Estimate the cost of transactions with different speed options
+- `deploy_iota_smart_contract`: Deploy a Solidity smart contract to IOTA networks
+- `analyze_iota_smart_contract`: Perform security analysis on deployed smart contracts
+
+### Arbitrage Tools
+
+- `get_cross_chain_token_price`: Get token prices across different networks including IOTA
+- `find_arbitrage_opportunities`: Detect profitable trading opportunities between IOTA and other chains
+- `list_arbitrage_tokens`: View all tokens available for arbitrage monitoring
 
 ### Key IOTA Resources
 

@@ -162,4 +162,56 @@ export async function getERC1155TokenURI(
   });
 
   return contract.read.uri([tokenId]);
-} 
+}
+
+/**
+ * Get ERC20 token balance for an address
+ */
+export async function getERC20Balance(
+  tokenAddress: Address,
+  ownerAddress: Address,
+  network: string = 'ethereum'
+): Promise<{
+  raw: bigint;
+  formatted: string;
+  token: {
+    symbol: string;
+    decimals: number;
+  };
+}> {
+  const publicClient = getPublicClient(network);
+
+  // ERC20 balanceOf ABI
+  const balanceOfAbi = [
+    {
+      inputs: [{ type: 'address', name: 'account' }],
+      name: 'balanceOf',
+      outputs: [{ type: 'uint256' }],
+      stateMutability: 'view',
+      type: 'function'
+    }
+  ] as const;
+
+  // Create contract instance
+  const contract = getContract({
+    address: tokenAddress,
+    abi: [...erc20Abi, ...balanceOfAbi],
+    client: publicClient,
+  });
+
+  // Get token info and balance
+  const [balance, symbol, decimals] = await Promise.all([
+    contract.read.balanceOf([ownerAddress]),
+    contract.read.symbol(),
+    contract.read.decimals()
+  ]);
+
+  return {
+    raw: balance,
+    formatted: formatUnits(balance, decimals),
+    token: {
+      symbol,
+      decimals,
+    }
+  };
+}

@@ -27,7 +27,11 @@
     "version:major": "npm version major",
     "release": "npm publish",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s -r 0",
-    "changelog:latest": "conventional-changelog -p angular -r 1 > RELEASE_NOTES.md"
+    "changelog:latest": "conventional-changelog -p angular -r 1 > RELEASE_NOTES.md",
+    "demo:install": "cd demo && npm install",
+    "demo:dev": "concurrently \"npm run dev:http\" \"cd demo && npm run dev\"",
+    "demo:start": "concurrently \"npm run start:http\" \"cd demo && npm start\"",
+    "demo:build": "cd demo && npm run build"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
@@ -35,6 +39,7 @@
     "@types/jest": "^29.5.12",
     "@types/node": "^20.11.30",
     "bun-types": "^1.2.9",
+    "concurrently": "^8.2.2",
     "conventional-changelog-cli": "^5.0.0",
     "jest": "^29.7.0",
     "nodemon": "^3.1.0",

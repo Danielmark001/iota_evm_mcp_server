@@ -6,6 +6,7 @@ import { registerEVMPrompts } from "../core/prompts.js";
 import { registerIOTATools } from "../core/iota-tools.js";
 import { registerIOTAResources } from "../core/iota-resources.js";
 import { registerIOTAPrompts } from "../core/iota-prompts.js";
+import { registerArbitrageTools } from "../core/arbitrage-tools.js";
 import { getSupportedNetworks } from "../core/chains.js";
 import { isIOTANetwork } from "../core/services/iota.js";
 
@@ -27,6 +28,9 @@ async function startServer() {
     registerIOTAResources(server);
     registerIOTATools(server);
     registerIOTAPrompts(server);
+    
+    // Register cross-chain arbitrage tools
+    registerArbitrageTools(server);
 
     // Get all supported networks
     const networks = getSupportedNetworks();
@@ -36,6 +40,7 @@ async function startServer() {
     console.error(`IOTA-EVM MCP Server initialized`);
     console.error(`IOTA networks supported: ${iotaNetworks.join(", ")}`);
     console.error(`All supported networks: ${networks.join(", ")}`);
+    console.error(`Cross-chain arbitrage monitoring enabled`);
     console.error("Server is ready to handle requests");
 
     return server;
