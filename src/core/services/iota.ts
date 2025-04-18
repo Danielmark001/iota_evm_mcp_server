@@ -462,6 +462,7 @@ export async function deployIOTASmartContract(
       gas: estimatedGasLimit,
       maxFeePerGas: actualMaxFeePerGas,
       maxPriorityFeePerGas: actualMaxPriorityFeePerGas,
+      chain: client.chain,
     });
 
     // Wait for transaction receipt
