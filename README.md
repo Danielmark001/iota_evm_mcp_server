@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/danielmark001-iota-evm-mcp-server-badge.png)](https://mseep.ai/app/danielmark001-iota-evm-mcp-server)
+
 # IOTA MCP Server
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
